@@ -35,44 +35,22 @@ regd_users.post("/login", (req, res) => {
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
   const user = req.session.authorization.username;
-  const newReview = {
-    user: user,
-    review: req.body.review
-  };
-  const bookToReview = books[req.params.isbn]
-  let reviewsArr = [];
-  //if there are reviews
-  if(bookToReview.reviews.length != undefined){
-    reviewsArr = bookToReview.reviews
-    let alreadyReviewed = reviewsArr.findIndex((review) => review.user === user);
-    //if user already reviewed the book
-    if(alreadyReviewed >= 0){
-      reviewsArr[alreadyReviewed] = newReview;
-    } else {
-      reviewsArr.push(newReview)
-    }
-    bookToReview.reviews = reviewsArr
-  //if no reviews
-  } else {
-    reviewsArr.push(newReview)
-    bookToReview.reviews = reviewsArr
-  }
-  return res.status(200).json({ message: `${user}'s review on ${bookToReview.title} by ${bookToReview.author} has been submitted.`});
+  const book = books[req.params.isbn];
+  if (!book){
+    res.status(400).json("Could not find that book.")
+  } 
+  book.reviews[user] = req.body.review
+  res.status(200).json(`${user}'s review on ${book.title} by ${book.author} has been submitted.`);
 });
 //Delete a book review
 regd_users.delete("/auth/review/:isbn", (req, res) => {
   const user = req.session.authorization.username;
-  const reviews = books[req.params.isbn].reviews;
-  if(reviews.length === undefined){
-    return res.status(404).json("No reviews to delete")
-  }
-  const filteredReview = reviews.findIndex((review) => review.user === user);
-  if(filteredReview >= 0){
-    reviews.splice(filteredReview, 1);
-  } else {
-    return res.status(404).json("Review not found")
-  }
-  return res.status(200).json(`${user}'s review on ${books[req.params.isbn].title} has been successfully deleted.`)
+  const book = books[req.params.isbn];
+  if (!book){
+    res.status(400).json("Could not find that book.")
+  } 
+  delete book.reviews[user]
+  res.status(200).json(`${user}'s review on ${book.title} by ${book.author} has been successfully deleted.`);
 })
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
